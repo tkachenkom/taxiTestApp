@@ -1,0 +1,45 @@
+version: "2.1"
+
+networks:
+  taxi:
+
+services:
+  taxi-api:
+    container_name: taxi-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+
+    environment:
+      - TAXI_API_HOST=taxi-api
+      - TAXI_API_PORT=8081
+      - TAXI_DATABASE_NAME=taxi
+      - TAXI_DATABASE_HOST=taxi-db
+      - TAXI_DATABASE_PORT=5432
+      - TAXI_DATABASE_USER=postgres
+      - TAXI_DATABASE_PASSWORD=1234567
+      - TAXI_DATABASE_SSL=disable
+    ports:
+      - 8081:8081
+    command: bash -c "./taxi run"
+    depends_on:
+      taxi-db:
+        condition: service_healthy
+    networks:
+      - taxi
+
+  taxi-db:
+    container_name: taxi-db
+    image: postgres:10
+    environment:
+      - POSTGRES_DB=taxi
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234567
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taxi
